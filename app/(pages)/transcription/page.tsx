@@ -3,30 +3,33 @@
 import { motion, AnimatePresence } from "framer-motion"
 import { useEffect, useRef, useState } from "react"
 import { storeAudioFile } from "@/app/utils/audioStorage"
-import { FiChevronDown } from "react-icons/fi"
+import { FiChevronDown, FiClock } from "react-icons/fi"
+import { useRouter } from "next/navigation"
 
 const LANGUAGES = [
   { code: "en", label: "English", flag: "🇺🇸" },
-  // { code: "hi", label: "Hindi", flag: "🇮🇳" },
-  // { code: "es", label: "Spanish", flag: "🇪🇸" },
-  // { code: "fr", label: "French", flag: "🇫🇷" },
-  // { code: "de", label: "German", flag: "🇩🇪" },
-  // { code: "it", label: "Italian", flag: "🇮🇹" },
-  // { code: "pt", label: "Portuguese", flag: "🇵🇹" },
-  // { code: "ru", label: "Russian", flag: "🇷🇺" },
-  // { code: "zh", label: "Chinese", flag: "🇨🇳" },
-  // { code: "ja", label: "Japanese", flag: "🇯🇵" },
-  // { code: "ko", label: "Korean", flag: "🇰🇷" },
-  // { code: "ar", label: "Arabic", flag: "🇸🇦" },
-  // { code: "bn", label: "Bengali", flag: "🇧🇩" },
-  // { code: "ur", label: "Urdu", flag: "🇵🇰" },
-  // { code: "tr", label: "Turkish", flag: "🇹🇷" },
-  // { code: "th", label: "Thai", flag: "🇹🇭" },
-  // { code: "vi", label: "Vietnamese", flag: "🇻🇳" },
-  // { code: "id", label: "Indonesian", flag: "🇮🇩" },
+  { code: "hi", label: "Hindi", flag: "🇮🇳" },
+  { code: "es", label: "Spanish", flag: "🇪🇸" },
+  { code: "fr", label: "French", flag: "🇫🇷" },
+  { code: "de", label: "German", flag: "🇩🇪" },
+  { code: "it", label: "Italian", flag: "🇮🇹" },
+  { code: "pt", label: "Portuguese", flag: "🇵🇹" },
+  { code: "ru", label: "Russian", flag: "🇷🇺" },
+  { code: "zh", label: "Chinese", flag: "🇨🇳" },
+  { code: "ja", label: "Japanese", flag: "🇯🇵" },
+  { code: "ko", label: "Korean", flag: "🇰🇷" },
+  { code: "ar", label: "Arabic", flag: "🇸🇦" },
+  { code: "bn", label: "Bengali", flag: "🇧🇩" },
+  { code: "ur", label: "Urdu", flag: "🇵🇰" },
+  { code: "tr", label: "Turkish", flag: "🇹🇷" },
+  { code: "th", label: "Thai", flag: "🇹🇭" },
+  { code: "vi", label: "Vietnamese", flag: "🇻🇳" },
+  { code: "id", label: "Indonesian", flag: "🇮🇩" },
 ]
 
 export default function TranscriptionPage() {
+  const router = useRouter()
+
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const dropdownRef = useRef<HTMLDivElement | null>(null)
 
@@ -39,7 +42,9 @@ export default function TranscriptionPage() {
   const [isOpen, setIsOpen] = useState(false)
   const [search, setSearch] = useState("")
   const [isTranscribing, setIsTranscribing] = useState(false)
-  const [eta, setEta] = useState<string | null>(null)
+  const [eta, setEta] = useState<number | null>(null)
+  const [progress, setProgress] = useState(0)
+  const progressRef = useRef<NodeJS.Timeout | null>(null)
 
   // ---- Drag & Drop ----
   const handleDrop = (e: React.DragEvent) => {
@@ -68,6 +73,32 @@ export default function TranscriptionPage() {
     document.addEventListener("mousedown", handler)
     return () => document.removeEventListener("mousedown", handler)
   }, [])
+
+  // ---- Dynamic Progress Bar (simulated) ----
+  useEffect(() => {
+    if (isTranscribing) {
+      setProgress(0)
+
+      // Smooth progress simulation
+      progressRef.current = setInterval(() => {
+        setProgress((prev) => {
+          if (prev >= 90) return prev // Stop at 90% until actual completion
+          // Faster growth at the beginning, slower near the end
+          const increment = (100 - prev) * 0.05
+          return prev + increment
+        })
+      }, 500)
+    } else {
+      if (progressRef.current) {
+        clearInterval(progressRef.current)
+        progressRef.current = null
+      }
+    }
+
+    return () => {
+      if (progressRef.current) clearInterval(progressRef.current)
+    }
+  }, [isTranscribing])
 
   // ---- Language logic ----
   const selectLanguage = (lang: (typeof LANGUAGES)[0]) => {
@@ -102,6 +133,8 @@ export default function TranscriptionPage() {
     }
 
     setIsTranscribing(true)
+    setEta(null)
+
     const formData = new FormData()
     formData.append("file", file)
     formData.append("language", language.label)
@@ -128,6 +161,9 @@ export default function TranscriptionPage() {
         throw new Error("Transcription returned empty result. Please try again.")
       }
 
+      // Complete the progress bar
+      setProgress(100)
+
       const stored = JSON.parse(
         localStorage.getItem("voxscribe_files") || "[]"
       )
@@ -136,12 +172,12 @@ export default function TranscriptionPage() {
 
       // Store audio file in IndexedDB (not localStorage to avoid quota issues)
       await storeAudioFile(fileId, file)
-      setEta(`${data.duration}s`)
+      setEta(data.duration) // duration in seconds
+
       stored.unshift({
         id: fileId,
         name: file.name,
         size: file.size,
-
         duration: data.duration,
         language: language.label,
         createdAt: new Date().toISOString(),
@@ -154,14 +190,16 @@ export default function TranscriptionPage() {
 
       // Redirect to the file page to show the transcript immediately
       setTimeout(() => {
-        window.location.href = `/file/${fileId}`
-      }, 1500) // show ETA for 1.5s before redirect
+        router.push(`/file/${fileId}`)
+      }, 1500)
 
     } catch (err: any) {
       // Show user-friendly error message
       const errorMessage = err.message || "An error occurred during transcription. Please try again."
       alert(errorMessage)
       console.error("Transcription error:", err)
+      setEta(null)
+      setProgress(0)
     } finally {
       setIsTranscribing(false)
     }
@@ -196,12 +234,12 @@ export default function TranscriptionPage() {
 
       {/* Liquid blobs */}
       <motion.div
-        className="absolute -top-32 -left-32 w-96 h-96 bg-red-600/30 rounded-full blur-3xl will-change-transform!"
+        className="absolute -top-32 -left-32 w-96 h-96 bg-red-600/30 rounded-full blur-3xl will-change-transform"
         animate={{ x: [0, 60, -40, 0], y: [0, 40, -60, 0] }}
         transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
-        className="absolute -bottom-32 -right-32 w-96 h-96 bg-pink-600/20 rounded-full blur-3xl will-change-transform!"
+        className="absolute -bottom-32 -right-32 w-96 h-96 bg-pink-600/20 rounded-full blur-3xl will-change-transform"
         animate={{ x: [0, -50, 30, 0], y: [0, -40, 50, 0] }}
         transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
       />
@@ -213,8 +251,6 @@ export default function TranscriptionPage() {
         transition={{ duration: 0.6 }}
         className="relative z-10 w-full max-w-xl bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-6 sm:p-8"
       >
-
-
         <h1 className="text-2xl sm:text-3xl font-bold text-white text-center mb-6">
           Transcribe Files
         </h1>
@@ -229,8 +265,8 @@ export default function TranscriptionPage() {
           onDrop={handleDrop}
           onClick={handleBrowse}
           className={`border-2 border-dashed rounded-xl p-6 sm:p-8 text-center cursor-pointer transition
-            ${isDragging ? "border-red-400 bg-red-500/10" : "border-red-500/50 bg-black/30 hover:bg-black/40"}
-          `}
+              ${isDragging ? "border-red-400 bg-red-500/10" : "border-red-500/50 bg-black/30 hover:bg-black/40"}
+            `}
         >
           <input
             ref={fileInputRef}
@@ -288,21 +324,21 @@ export default function TranscriptionPage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 8 }}
                 className="absolute z-[999] bottom-full mb-2 w-full
-                 bg-zinc-900/95 backdrop-blur-xl
-                 border border-white/10 rounded-xl shadow-xl p-2"
+                  bg-zinc-900/95 backdrop-blur-xl
+                  border border-white/10 rounded-xl shadow-xl p-2"
               >
                 {/* Search */}
-                {/* <input
+                <input
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)} 
+                  onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search language..."
                   className="w-full mb-2 px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-red-500/60"
-                /> */}
+                />
 
                 {/* Recent */}
-                {/* {recentLanguages.length > 0 && (
+                {recentLanguages.length > 0 && (
                   <>
-                    <p className="text-xs text-zinc-400 mb-1">Recent</p>
+                    <p className="text-xs text-zinc-400 mb-1 px-2">Recent</p>
                     {recentLanguages.map((lang) => (
                       <button
                         key={lang.code}
@@ -315,7 +351,7 @@ export default function TranscriptionPage() {
                     ))}
                     <div className="h-px bg-white/10 my-2" />
                   </>
-                )} */}
+                )}
 
                 {/* All */}
                 <div className="max-h-56 overflow-y-auto pr-1">
@@ -361,12 +397,69 @@ export default function TranscriptionPage() {
             "TRANSCRIBE"
           )}
         </motion.button>
-        {eta && !isTranscribing && (
-          <p className="text-sm text-zinc-400 mt-3 text-center">
-            ⏱ Processed in {eta}
-          </p>
-        )}
 
+        {/* Dynamic Progress Bar with Animation */}
+        {isTranscribing && (
+          <div className="mt-4">
+            <div className="flex justify-between items-center text-xs text-zinc-400 mb-2">
+              <div className="flex items-center gap-2">
+                <FiClock className="w-3.5 h-3.5" />
+                <span>Processing audio</span>
+              </div>
+              <span className="font-mono">{Math.floor(progress)}%</span>
+            </div>
+
+            <div className="relative w-full h-2.5 rounded-full bg-white/5 overflow-hidden border border-white/10">
+              {/* Background shimmer effect */}
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+                animate={{ x: ['-100%', '200%'] }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "linear"
+                }}
+              />
+
+              {/* Actual progress bar */}
+              {/* Animated 360° striped progress bar */}
+              <motion.div
+                className="relative h-full overflow-hidden rounded-full"
+                initial={{ width: 0 }}
+                animate={{ width: `${progress}%` }}
+                transition={{ ease: "easeOut", duration: 0.5 }}
+              >
+                {/* Base color */}
+                <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-pink-500" />
+
+                {/* Moving diagonal stripes (360° loop feel) */}
+                <motion.div
+                  className="
+      absolute inset-0
+      bg-[repeating-linear-gradient(
+        45deg,
+        rgba(255,255,255,0.35) 0px,
+        rgba(255,255,255,0.35) 10px,
+        rgba(255,255,255,0.05) 10px,
+        rgba(255,255,255,0.05) 20px
+      )]
+      bg-[length:40px_40px]
+    "
+                  animate={{ backgroundPosition: ["0px 0px", "40px 40px"] }}
+                  transition={{
+                    duration: 1,
+                    repeat: Infinity,
+                    ease: "linear",
+                  }}
+                />
+
+                {/* Glow edge */}
+                <div className="absolute right-0 top-0 h-full w-6 bg-gradient-to-l from-white/50 to-transparent blur-md" />
+              </motion.div>
+
+            </div>
+          </div>
+        )}
       </motion.div>
     </div>
   )
