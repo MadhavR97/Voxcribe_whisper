@@ -3,26 +3,27 @@
 import { motion, AnimatePresence } from "framer-motion"
 import { useEffect, useRef, useState } from "react"
 import { storeAudioFile } from "@/app/utils/audioStorage"
+import { FiChevronDown } from "react-icons/fi"
 
 const LANGUAGES = [
   { code: "en", label: "English", flag: "🇺🇸" },
-  { code: "hi", label: "Hindi", flag: "🇮🇳" },
-  { code: "es", label: "Spanish", flag: "🇪🇸" },
-  { code: "fr", label: "French", flag: "🇫🇷" },
-  { code: "de", label: "German", flag: "🇩🇪" },
-  { code: "it", label: "Italian", flag: "🇮🇹" },
-  { code: "pt", label: "Portuguese", flag: "🇵🇹" },
-  { code: "ru", label: "Russian", flag: "🇷🇺" },
-  { code: "zh", label: "Chinese", flag: "🇨🇳" },
-  { code: "ja", label: "Japanese", flag: "🇯🇵" },
-  { code: "ko", label: "Korean", flag: "🇰🇷" },
-  { code: "ar", label: "Arabic", flag: "🇸🇦" },
-  { code: "bn", label: "Bengali", flag: "🇧🇩" },
-  { code: "ur", label: "Urdu", flag: "🇵🇰" },
-  { code: "tr", label: "Turkish", flag: "🇹🇷" },
-  { code: "th", label: "Thai", flag: "🇹🇭" },
-  { code: "vi", label: "Vietnamese", flag: "🇻🇳" },
-  { code: "id", label: "Indonesian", flag: "🇮🇩" },
+  // { code: "hi", label: "Hindi", flag: "🇮🇳" },
+  // { code: "es", label: "Spanish", flag: "🇪🇸" },
+  // { code: "fr", label: "French", flag: "🇫🇷" },
+  // { code: "de", label: "German", flag: "🇩🇪" },
+  // { code: "it", label: "Italian", flag: "🇮🇹" },
+  // { code: "pt", label: "Portuguese", flag: "🇵🇹" },
+  // { code: "ru", label: "Russian", flag: "🇷🇺" },
+  // { code: "zh", label: "Chinese", flag: "🇨🇳" },
+  // { code: "ja", label: "Japanese", flag: "🇯🇵" },
+  // { code: "ko", label: "Korean", flag: "🇰🇷" },
+  // { code: "ar", label: "Arabic", flag: "🇸🇦" },
+  // { code: "bn", label: "Bengali", flag: "🇧🇩" },
+  // { code: "ur", label: "Urdu", flag: "🇵🇰" },
+  // { code: "tr", label: "Turkish", flag: "🇹🇷" },
+  // { code: "th", label: "Thai", flag: "🇹🇭" },
+  // { code: "vi", label: "Vietnamese", flag: "🇻🇳" },
+  // { code: "id", label: "Indonesian", flag: "🇮🇩" },
 ]
 
 export default function TranscriptionPage() {
@@ -195,12 +196,12 @@ const [eta, setEta] = useState<string | null>(null)
 
       {/* Liquid blobs */}
       <motion.div
-        className="absolute -top-32 -left-32 w-96 h-96 bg-red-600/30 rounded-full blur-3xl"
+        className="absolute -top-32 -left-32 w-96 h-96 bg-red-600/30 rounded-full blur-3xl will-change-transform!"
         animate={{ x: [0, 60, -40, 0], y: [0, 40, -60, 0] }}
         transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
-        className="absolute -bottom-32 -right-32 w-96 h-96 bg-pink-600/20 rounded-full blur-3xl"
+        className="absolute -bottom-32 -right-32 w-96 h-96 bg-pink-600/20 rounded-full blur-3xl will-change-transform!"
         animate={{ x: [0, -50, 30, 0], y: [0, -40, 50, 0] }}
         transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
       />
@@ -271,7 +272,13 @@ const [eta, setEta] = useState<string | null>(null)
               <span>{language.flag}</span>
               <span>{language.label}</span>
             </span>
-            <span className="text-zinc-400">▾</span>
+            <motion.span
+              animate={{ rotate: isOpen ? 180 : 0 }}
+              transition={{ duration: 0.2, ease: "easeInOut" }}
+              className="text-zinc-400 flex items-center"
+            >
+              <FiChevronDown size={18} />
+            </motion.span>
           </button>
 
           <AnimatePresence>
@@ -280,18 +287,20 @@ const [eta, setEta] = useState<string | null>(null)
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 8 }}
-                className="absolute z-50 mt-2 w-full bg-zinc-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-xl p-2"
+                className="absolute z-[999] bottom-full mb-2 w-full
+                 bg-zinc-900/95 backdrop-blur-xl
+                 border border-white/10 rounded-xl shadow-xl p-2"
               >
                 {/* Search */}
-                <input
+                {/* <input
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(e) => setSearch(e.target.value)} 
                   placeholder="Search language..."
                   className="w-full mb-2 px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-red-500/60"
-                />
+                /> */}
 
                 {/* Recent */}
-                {recentLanguages.length > 0 && (
+                {/* {recentLanguages.length > 0 && (
                   <>
                     <p className="text-xs text-zinc-400 mb-1">Recent</p>
                     {recentLanguages.map((lang) => (
@@ -306,7 +315,7 @@ const [eta, setEta] = useState<string | null>(null)
                     ))}
                     <div className="h-px bg-white/10 my-2" />
                   </>
-                )}
+                )} */}
 
                 {/* All */}
                 <div className="max-h-56 overflow-y-auto pr-1">
