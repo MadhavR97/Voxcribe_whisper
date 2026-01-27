@@ -137,7 +137,7 @@ export default function TranscriptionPage() {
 
     const formData = new FormData()
     formData.append("file", file)
-    formData.append("language", language.label)
+    formData.append("language", language.code)
 
     try {
       const res = await fetch("/api/transcribe", {
