@@ -74,15 +74,21 @@ export async function ensureWhisperInstalled() {
       make -j examples/main
     `, { stdio: "inherit" })
 
-    const builtBinary = path.join(
-      WHISPER_DIR,
-      "src",
-      "examples",
-      "main",
-      "main"
-    )
+    const candidates = ["whisper", "whisper-cli", "main"]
+    let builtBinary: string | null = null
 
-    if (!fs.existsSync(builtBinary)) {
+    for (const name of candidates) {
+      const found = findFileRecursive(
+        path.join(WHISPER_DIR, "src"),
+        name
+      )
+      if (found) {
+        builtBinary = found
+        break
+      }
+    }
+
+    if (!builtBinary) {
       throw new Error("Whisper CLI binary was not built")
     }
 
