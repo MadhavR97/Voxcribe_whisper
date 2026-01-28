@@ -35,13 +35,8 @@ RUN apk add --no-cache git cmake make g++ && \
 # Download Whisper small model
 RUN wget -O ./whisper/ggml-small.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin
 
-# Download and install FFmpeg static build
-RUN wget -O /tmp/ffmpeg-git-amd64-static.tar.xz https://johnvan.sickle.com/ffmpeg/ffmpeg-git-amd64-static.tar.xz && \
-    tar xvf /tmp/ffmpeg-git-amd64-static.tar.xz && \
-    mv ffmpeg-git-*-amd64-static/ffmpeg ./bin/ && \
-    chmod +x ./bin/ffmpeg && \
-    rm -rf ffmpeg-git-*-amd64-static && \
-    rm /tmp/ffmpeg-git-amd64-static.tar.xz
+# Install FFmpeg from Alpine packages
+RUN apk add --no-cache ffmpeg
 
 # Next.js collects completely anonymous telemetry data about general usage.
 # Learn more here: https://nextjs.org/telemetry
