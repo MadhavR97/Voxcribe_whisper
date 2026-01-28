@@ -43,6 +43,10 @@ RUN apk add --no-cache ffmpeg
 # Uncomment the following line to disable telemetry at build time
 ENV NEXT_TELEMETRY_DISABLED 1
 
+# Set environment variables for build
+ENV NEXT_PUBLIC_SUPABASE_URL="https://feciqpkhuppilhwnhzix.supabase.co"
+ENV NEXT_PUBLIC_SUPABASE_ANON_KEY="sb_publishable_L1-w3eT_kYHDXj7uk76how_zdbNsfkb"
+
 # Build the application
 RUN npm run build
 
