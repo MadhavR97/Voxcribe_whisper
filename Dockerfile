@@ -22,21 +22,21 @@ COPY . .
 RUN mkdir -p whisper bin
 
 # Download and install Whisper CLI for Linux
-RUN wget -O /tmp/whisper-cli-linux-x64 https://github.com/ggerganov/whisper.cpp/releases/download/v1.5.4/whisper-cli-linux-x64 && \
-    chmod +x /tmp/whisper-cli-linux-x64 && \
-    mv /tmp/whisper-cli-linux-x64 ./whisper/whisper && \
+RUN wget -O /tmp/whisper-cli-linux-x64.zip https://github.com/ggerganov/whisper.cpp/releases/download/v1.5.4/whisper-bin-linux-x64.zip && \
+    unzip /tmp/whisper-cli-linux-x64.zip -d /tmp/whisper && \
+    cp /tmp/whisper/main ./whisper/whisper && \
     chmod +x ./whisper/whisper
 
 # Download Whisper small model
 RUN wget -O ./whisper/ggml-small.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin
 
 # Download and install FFmpeg static build
-RUN wget -O /tmp/ffmpeg-release-amd64-static.tar.xz https://johnvansickle.com/ffmpeg/releases/ffmpeg-git-amd64-static.tar.xz && \
-    tar xvf /tmp/ffmpeg-release-amd64-static.tar.xz && \
+RUN wget -O /tmp/ffmpeg-git-amd64-static.tar.xz https://johnvansickle.com/ffmpeg/releases/ffmpeg-git-full-amd64-static.tar.xz && \
+    tar xvf /tmp/ffmpeg-git-amd64-static.tar.xz && \
     mv ffmpeg-git-*-amd64-static/ffmpeg ./bin/ && \
     chmod +x ./bin/ffmpeg && \
     rm -rf ffmpeg-git-*-amd64-static && \
-    rm /tmp/ffmpeg-release-amd64-static.tar.xz
+    rm /tmp/ffmpeg-git-amd64-static.tar.xz
 
 # Next.js collects completely anonymous telemetry data about general usage.
 # Learn more here: https://nextjs.org/telemetry

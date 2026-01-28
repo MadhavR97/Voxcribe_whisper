@@ -21,8 +21,13 @@ export function getWhisperBinaryPath() {
   if (platform === "linux") {
     // Check if we're in Render environment
     const renderBinPath = path.join(process.cwd(), "whisper", "whisper");
-    if (process.env.RENDER === 'true' && fs.existsSync(renderBinPath)) {
-      return renderBinPath;
+    const renderMainPath = path.join(process.cwd(), "whisper", "main");
+    if (process.env.RENDER === 'true') {
+      if (fs.existsSync(renderBinPath)) {
+        return renderBinPath;
+      } else if (fs.existsSync(renderMainPath)) {
+        return renderMainPath;
+      }
     }
     return path.join(WHISPER_DIR, "whisper")
   }
@@ -65,9 +70,14 @@ export async function ensureWhisperInstalled() {
       console.log("⚠️ Whisper binary not found at expected path:", binPath);
       console.log("⚠️ This should be pre-installed in production environments");
       
-      // In a Docker environment like Render, throw an error if not found
+      // In a Docker environment like Render, also check for 'main' binary (newer whisper.cpp releases)
+      const mainPath = path.join(WHISPER_DIR, "main");
       if (process.env.NODE_ENV === 'production') {
-        throw new Error(`Whisper binary not found at ${binPath}. Ensure it's included in your Docker image.`);
+        if (fs.existsSync(mainPath)) {
+          console.log("✅ Found Whisper main binary at", mainPath);
+        } else {
+          throw new Error(`Whisper binary not found at ${binPath} or ${mainPath}. Ensure it's included in your Docker image.`);
+        }
       }
       
       // Only attempt download in development
