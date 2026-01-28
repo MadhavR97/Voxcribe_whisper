@@ -4,7 +4,6 @@ import https from "https"
 import { execSync } from "child_process"
 
 const WHISPER_DIR = path.join(process.cwd(), "whisper")
-const SRC_DIR = path.join(WHISPER_DIR, "src")
 
 const MODEL_NAME = "ggml-small.bin"
 const MODEL_PATH = path.join(WHISPER_DIR, MODEL_NAME)
@@ -62,99 +61,63 @@ export async function ensureWhisperInstalled() {
     }
   }
 
-  // ---------- Linux (Render-safe, build once) ----------
-  if (platform === "linux") {
-    if (fs.existsSync(binPath)) return
+  // ---------- Windows / Linux ----------
+  if (!fs.existsSync(binPath)) {
+    console.log("⬇️ Downloading Whisper binary for", platform)
 
-    console.log("🔨 Building Whisper from source (linux)")
+    let url: string
+    let extractZip = false
 
-    // Clone only once
-    if (!fs.existsSync(SRC_DIR)) {
-      execSync(
-        `cd ${WHISPER_DIR} && git clone --depth 1 --branch v1.5.4 https://github.com/ggml-org/whisper.cpp.git src`,
-        { stdio: "inherit" }
-      )
+    if (platform === "win32") {
+      url =
+        "https://github.com/ggerganov/whisper.cpp/releases/download/v1.5.4/whisper-bin-x64.zip"
+      extractZip = true
+    } else if (platform === "linux") {
+      url =
+        "https://github.com/ggml-org/whisper.cpp/releases/download/v1.5.4/whisper-cli-linux-x64"
+    } else {
+      throw new Error(`Auto-install not supported on ${platform}`)
     }
 
-    // Build safely (Render CPU throttling friendly)
-    execSync(`cd ${SRC_DIR} && make -j2`, { stdio: "inherit" })
-
-    // Find CLI binary dynamically
-    const candidates = ["whisper", "whisper-cli", "main"]
-    let builtBinary: string | null = null
-
-    for (const name of candidates) {
-      const found = findFileRecursive(SRC_DIR, name)
-      if (found) {
-        builtBinary = found
-        break
-      }
-    }
-
-    if (!builtBinary) {
-      throw new Error("Whisper CLI binary was not built")
-    }
-
-    fs.copyFileSync(builtBinary, binPath)
-    fs.chmodSync(binPath, 0o755)
-
-    console.log("✅ Whisper binary built at", binPath)
-    return
-  }
-
-  // ---------- Windows ----------
-  if (platform === "win32") {
-    if (fs.existsSync(binPath)) return
-
-    const url =
-      "https://github.com/ggerganov/whisper.cpp/releases/download/v1.5.4/whisper-bin-x64.zip"
-
-    const tmpPath = path.join(WHISPER_DIR, "whisper.zip")
+    const tmpPath = path.join(WHISPER_DIR, path.basename(url))
 
     await downloadFileWithProgress(url, tmpPath, "Whisper binary")
 
-    execSync(
-      `powershell -Command "Expand-Archive -Force '${tmpPath}' '${WHISPER_DIR}'"`,
-      { stdio: "inherit" }
-    )
-
-    const exePath =
-      findFileRecursive(WHISPER_DIR, "whisper.exe") ||
-      findFileRecursive(WHISPER_DIR, "main.exe")
-
-    if (!exePath) {
-      throw new Error(
-        "Whisper ZIP extracted but neither whisper.exe nor main.exe was found"
+    if (extractZip) {
+      execSync(
+        `powershell -Command "Expand-Archive -Force '${tmpPath}' '${WHISPER_DIR}'"`,
+        { stdio: "inherit" }
       )
+
+      const exePath =
+        findFileRecursive(WHISPER_DIR, "whisper.exe") ||
+        findFileRecursive(WHISPER_DIR, "main.exe")
+
+      if (!exePath) {
+        throw new Error(
+          "Whisper ZIP extracted but neither whisper.exe nor main.exe was found"
+        )
+      }
+
+      fs.renameSync(exePath, binPath)
+      fs.unlinkSync(tmpPath)
+      fs.chmodSync(binPath, 0o755)
+    } else {
+      fs.renameSync(tmpPath, binPath)
+      fs.chmodSync(binPath, 0o755)
     }
 
-    fs.renameSync(exePath, binPath)
-    fs.chmodSync(binPath, 0o755)
-    fs.unlinkSync(tmpPath)
-
     console.log("✅ Whisper binary installed at", binPath)
-    return
   }
 
-  throw new Error(`Unsupported platform: ${platform}`)
-}
-
-// =========================
-// Model
-// =========================
-
-export async function ensureWhisperModel() {
-  if (fs.existsSync(MODEL_PATH)) return
-
-  console.log("⬇️ Downloading Whisper model:", MODEL_NAME)
-
-  await downloadFileWithProgress(MODEL_URL, MODEL_PATH, "Whisper model")
-
+  // ---------- Model ----------
   if (!fs.existsSync(MODEL_PATH)) {
-    throw new Error("Whisper model download failed")
-  }
+    console.log("⬇️ Downloading Whisper model:", MODEL_NAME)
 
-  console.log("✅ Whisper model downloaded at", MODEL_PATH)
+    await downloadFileWithProgress(MODEL_URL, MODEL_PATH, "Whisper model")
+
+    console.log("✅ Whisper model downloaded at", MODEL_PATH)
+  }
 }
 
 // =========================
