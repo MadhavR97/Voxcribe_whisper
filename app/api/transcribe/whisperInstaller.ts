@@ -71,7 +71,7 @@ export async function ensureWhisperInstalled() {
       cd ${WHISPER_DIR} &&
       git clone --depth 1 --branch v1.5.4 https://github.com/ggml-org/whisper.cpp.git src &&
       cd src &&
-      make -j examples/main
+      make -j examples/whisper-cli
     `, { stdio: "inherit" })
 
     const candidates = ["whisper", "whisper-cli", "main"]
