@@ -55,7 +55,17 @@ export async function ensureWhisperInstalled() {
   } else {
     const binPath = getWhisperBinaryPath()
 
+    // In production environments (like Render), binaries should be pre-installed
     if (!fs.existsSync(binPath)) {
+      console.log("⚠️ Whisper binary not found at expected path:", binPath);
+      console.log("⚠️ This should be pre-installed in production environments");
+      
+      // In a Docker environment like Render, throw an error if not found
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error(`Whisper binary not found at ${binPath}. Ensure it's included in your Docker image.`);
+      }
+      
+      // Only attempt download in development
       console.log("⬇️ Downloading Whisper binary for", platform)
 
       let url: string
@@ -122,7 +132,16 @@ export async function ensureWhisperInstalled() {
   // 2️⃣ Ensure Whisper model
   // =========================
 
+  // In production environments (like Render), model should be pre-installed
   if (!fs.existsSync(MODEL_PATH)) {
+    console.log("⚠️ Whisper model not found at expected path:", MODEL_PATH);
+    console.log("⚠️ This should be pre-installed in production environments");
+    
+    // In a Docker environment like Render, throw an error if not found
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(`Whisper model not found at ${MODEL_PATH}. Ensure it's included in your Docker image.`);
+    }
+    
     console.log("⬇️ Downloading Whisper model:", MODEL_NAME)
 
     await downloadFileWithProgress(MODEL_URL, MODEL_PATH, "Whisper model")

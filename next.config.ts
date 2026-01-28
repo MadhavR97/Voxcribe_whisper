@@ -1,7 +1,17 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '10mb',
+    },
+    serverComponentsExternalPackages: ['sharp', 'canvas'],
+  },
+  // Enable compression for production
+  compress: true,
+  // Configure output for deployment
+  output: undefined,
+  // Timeout for API routes
 };
 
 export default nextConfig;

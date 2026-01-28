@@ -22,6 +22,12 @@ export async function ensureFFmpegInstalled() {
     fs.mkdirSync(BIN_DIR, { recursive: true })
 
     const platform = process.platform
+    
+    // In production environments (like Render), FFmpeg should be pre-installed
+    if (process.env.NODE_ENV === 'production') {
+        throw new Error(`FFmpeg not found at ${FFMPEG_PATH}. Ensure it's included in your Docker image.`);
+    }
+    
     console.log("⬇️ Installing FFmpeg for", platform)
 
     let url: string
