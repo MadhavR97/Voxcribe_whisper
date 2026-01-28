@@ -61,7 +61,7 @@ export async function ensureWhisperInstalled() {
     }
   }
 
-  // ---------- Linux (build from source) ----------
+  // ---------- Linux (build from source, v1.5.4 compatible) ----------
   if (platform === "linux") {
     if (fs.existsSync(binPath)) return
 
@@ -71,7 +71,7 @@ export async function ensureWhisperInstalled() {
       cd ${WHISPER_DIR} &&
       git clone --depth 1 --branch v1.5.4 https://github.com/ggml-org/whisper.cpp.git src &&
       cd src &&
-      make -j examples/whisper-cli
+      make -j
     `, { stdio: "inherit" })
 
     const candidates = ["whisper", "whisper-cli", "main"]
