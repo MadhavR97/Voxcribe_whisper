@@ -71,7 +71,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/whisper ./whisper
 COPY --from=builder --chown=nextjs:nodejs /app/bin ./bin
 
 # Set proper permissions
-RUN chmod +x ./whisper/whisper ./bin/ffmpeg
+RUN chmod +x ./whisper/whisper
 
 USER nextjs
 
