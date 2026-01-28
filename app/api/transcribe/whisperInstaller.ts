@@ -72,24 +72,22 @@ export async function ensureWhisperInstalled() {
     cd ${WHISPER_DIR} &&
     git clone --depth 1 --branch v1.5.4 https://github.com/ggml-org/whisper.cpp.git src &&
     cd src &&
-    make -j
+    make -j examples/main
   `, { stdio: "inherit" })
 
-        fs.copyFileSync(
-          path.join(WHISPER_DIR, "src", "main"),
-          binPath
-        )
+        const builtBinary = path.join(WHISPER_DIR, "src", "examples", "main")
 
-        fs.chmodSync(binPath, 0o755)
-
-        // ✅ IMPORTANT: stop here — no download logic for Linux
-        if (!fs.existsSync(binPath)) {
-          throw new Error("Whisper build failed on Linux")
+        if (!fs.existsSync(builtBinary)) {
+          throw new Error("Whisper CLI binary was not built")
         }
+
+        fs.copyFileSync(builtBinary, binPath)
+        fs.chmodSync(binPath, 0o755)
 
         console.log("✅ Whisper binary built at", binPath)
         return
-      } else {
+      }
+      else {
         throw new Error(`Auto-install not supported on ${platform}`)
       }
 
