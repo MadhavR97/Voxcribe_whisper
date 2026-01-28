@@ -22,9 +22,10 @@ COPY . .
 RUN mkdir -p whisper bin
 
 # Download and install Whisper CLI for Linux
-RUN wget -O /tmp/whisper-cli-linux-x64.zip https://github.com/ggerganov/whisper.cpp/releases/download/v1.5.4/whisper-bin-linux-x64.zip && \
-    unzip /tmp/whisper-cli-linux-x64.zip -d /tmp/whisper && \
-    cp /tmp/whisper/main ./whisper/whisper && \
+RUN wget -O /tmp/whisper-bin-x64.zip https://github.com/ggml-org/whisper.cpp/releases/download/v1.8.3/whisper-bin-x64.zip && \
+    unzip /tmp/whisper-bin-x64.zip -d /tmp/whisper && \
+    # The binary in the zip might be named differently, check for both possibilities
+    (test -f /tmp/whisper/main && cp /tmp/whisper/main ./whisper/whisper) || cp /tmp/whisper/whisper ./whisper/whisper && \
     chmod +x ./whisper/whisper
 
 # Download Whisper small model

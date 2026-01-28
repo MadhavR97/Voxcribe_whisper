@@ -29,7 +29,15 @@ export function getWhisperBinaryPath() {
         return renderMainPath;
       }
     }
-    return path.join(WHISPER_DIR, "whisper")
+    // Also check for the standard paths
+    const standardPath = path.join(WHISPER_DIR, "whisper");
+    const standardMainPath = path.join(WHISPER_DIR, "main");
+    if (fs.existsSync(standardPath)) {
+      return standardPath;
+    } else if (fs.existsSync(standardMainPath)) {
+      return standardMainPath;
+    }
+    return standardPath;
   }
 
   if (platform === "darwin") {
