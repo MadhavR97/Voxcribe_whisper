@@ -35,8 +35,8 @@ RUN apk add --no-cache git cmake make g++ && \
 # Download Whisper small model
 RUN wget -O ./whisper/ggml-small.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin
 
-# Install FFmpeg from Alpine packages
-RUN apk add --no-cache ffmpeg
+# Install FFmpeg from Alpine packages and copy to expected location
+RUN apk add --no-cache ffmpeg && mkdir -p /app/bin && cp $(which ffmpeg) /app/bin/ffmpeg
 
 # Next.js collects completely anonymous telemetry data about general usage.
 # Learn more here: https://nextjs.org/telemetry
@@ -71,7 +71,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/whisper ./whisper
 COPY --from=builder --chown=nextjs:nodejs /app/bin ./bin
 
 # Set proper permissions
-RUN chmod +x ./whisper/whisper
+RUN chmod +x ./whisper/whisper ./bin/ffmpeg
 
 USER nextjs
 
