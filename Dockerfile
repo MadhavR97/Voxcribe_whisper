@@ -36,7 +36,7 @@ RUN apk add --no-cache git cmake make g++ && \
 RUN wget -O ./whisper/ggml-small.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin
 
 # Download and install FFmpeg static build
-RUN wget -O /tmp/ffmpeg-git-amd64-static.tar.xz https://johnvansickle.com/ffmpeg/releases/ffmpeg-git-essentials-amd64-static.tar.xz && \
+RUN wget -O /tmp/ffmpeg-git-amd64-static.tar.xz https://johnvansickle.com/ffmpeg/releases/ffmpeg-git-amd64-static.tar.xz && \
     tar xvf /tmp/ffmpeg-git-amd64-static.tar.xz && \
     mv ffmpeg-git-*-amd64-static/ffmpeg ./bin/ && \
     chmod +x ./bin/ffmpeg && \
