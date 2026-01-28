@@ -413,6 +413,7 @@ export default function FilePage() {
                             {audioName || "No file selected"}
                         </h1>
                         <p className="text-sm text-zinc-400">
+                            {/* Backend injects date */}
                             —
                         </p>
                     </div>
