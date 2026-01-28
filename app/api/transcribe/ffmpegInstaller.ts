@@ -9,20 +9,20 @@ let FFMPEG_PATH =
         ? path.join(BIN_DIR, "ffmpeg.exe")
         : path.join(BIN_DIR, "ffmpeg")
 
-// Check if we're in Render environment
-if (process.platform === "linux" && process.env.RENDER === 'true') {
-    const renderFfmpegPath = path.join(process.cwd(), "bin", "ffmpeg");
-    if (fs.existsSync(renderFfmpegPath)) {
-        FFMPEG_PATH = renderFfmpegPath;
+// Check if we're in Docker/Render environment
+if (process.platform === "linux" && process.env.NODE_ENV === 'production') {
+    const dockerFfmpegPath = path.join(process.cwd(), "bin", "ffmpeg");
+    if (fs.existsSync(dockerFfmpegPath)) {
+        FFMPEG_PATH = dockerFfmpegPath;
     }
 }
 
 export function getFFmpegPath() {
-    // Check if we're in Render environment
-    if (process.platform === "linux" && process.env.RENDER === 'true') {
-        const renderFfmpegPath = path.join(process.cwd(), "bin", "ffmpeg");
-        if (fs.existsSync(renderFfmpegPath)) {
-            return renderFfmpegPath;
+    // Check if we're in Docker/Render environment
+    if (process.platform === "linux" && process.env.NODE_ENV === 'production') {
+        const dockerFfmpegPath = path.join(process.cwd(), "bin", "ffmpeg");
+        if (fs.existsSync(dockerFfmpegPath)) {
+            return dockerFfmpegPath;
         }
     }
     return FFMPEG_PATH

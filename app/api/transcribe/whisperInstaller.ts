@@ -19,14 +19,14 @@ export function getWhisperBinaryPath() {
   }
 
   if (platform === "linux") {
-    // Check if we're in Render environment
-    const renderBinPath = path.join(process.cwd(), "whisper", "whisper");
-    const renderMainPath = path.join(process.cwd(), "whisper", "main");
-    if (process.env.RENDER === 'true') {
-      if (fs.existsSync(renderBinPath)) {
-        return renderBinPath;
-      } else if (fs.existsSync(renderMainPath)) {
-        return renderMainPath;
+    // Check if we're in Docker/Render environment
+    const dockerBinPath = path.join(process.cwd(), "whisper", "whisper");
+    const dockerMainPath = path.join(process.cwd(), "whisper", "main");
+    if (process.env.NODE_ENV === 'production') {
+      if (fs.existsSync(dockerBinPath)) {
+        return dockerBinPath;
+      } else if (fs.existsSync(dockerMainPath)) {
+        return dockerMainPath;
       }
     }
     // Also check for the standard paths
