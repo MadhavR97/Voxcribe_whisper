@@ -1,6 +1,4 @@
 export const runtime = "nodejs"
-export const maxDuration = 300  // 5 minutes timeout for transcription
-
 
 import { NextResponse } from "next/server"
 import { writeFile, readFile, unlink, access } from "fs/promises"

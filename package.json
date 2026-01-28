@@ -8,10 +8,7 @@
     "start": "next start",
     "lint": "eslint"
   },
-  "next": {
-    "output": "standalone"
-  },
-  "dependencies":  {
+  "dependencies": {
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.91.1",
     "framer-motion": "^12.29.0",

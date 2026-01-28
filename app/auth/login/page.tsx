@@ -18,12 +18,6 @@ export default function LoginPage() {
     e.preventDefault()
     setError(null)
     setLoading(true)
-    
-    if (!supabase) {
-      setError('Supabase client not available')
-      setLoading(false)
-      return
-    }
 
     const { error } = await supabase.auth.signInWithPassword({
       email,

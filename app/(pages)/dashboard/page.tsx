@@ -6,11 +6,6 @@ import { useRouter } from "next/navigation"
 import Header from "../../components/header"
 import { supabase } from "@/lib/supabaseClient"
 
-// Ensure supabase client is available
-if (typeof window !== 'undefined' && !supabase) {
-  console.error('Supabase client not available. Check environment variables.')
-}
-
 type VoxFile = {
     id: string
     name: string
@@ -29,11 +24,6 @@ export default function DashboardPage() {
 
     useEffect(() => {
         const getUser = async () => {
-            if (!supabase) {
-                console.error('Supabase client not available')
-                return
-            }
-            
             const {
                 data: { user },
             } = await supabase.auth.getUser()
@@ -54,11 +44,6 @@ export default function DashboardPage() {
     }, [])
 
     const handleLogout = async () => {
-        if (!supabase) {
-            console.error('Supabase client not available')
-            return
-        }
-        
         await supabase.auth.signOut()
         router.replace("/auth/login")
     }

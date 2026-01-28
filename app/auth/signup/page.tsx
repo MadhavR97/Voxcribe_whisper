@@ -18,11 +18,6 @@ export default function SignupPage() {
     const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault()
         setError(null)
-        
-        if (!supabase) {
-            setError('Supabase client not available')
-            return
-        }
 
         setLoading(true)
 
