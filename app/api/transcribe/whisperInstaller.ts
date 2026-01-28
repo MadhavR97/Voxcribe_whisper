@@ -67,7 +67,7 @@ export async function ensureWhisperInstalled() {
         extractZip = true
       } else if (platform === "linux") {
         url =
-          "https://github.com/ggerganov/whisper.cpp/releases/download/v1.5.4/whisper-cli-linux-x64"
+          "https://github.com/ggerganov/whisper.cpp/releases/download/v1.5.4/whisper-cpp-linux-x64"
       } else {
         throw new Error(`Auto-install not supported on ${platform}`)
       }
