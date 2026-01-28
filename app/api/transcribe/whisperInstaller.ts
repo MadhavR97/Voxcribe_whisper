@@ -78,13 +78,12 @@ export async function ensureWhisperInstalled() {
       console.log("⚠️ Whisper binary not found at expected path:", binPath);
       console.log("⚠️ This should be pre-installed in production environments");
       
-      // In a Docker environment like Render, also check for 'main' binary (newer whisper.cpp releases)
-      const mainPath = path.join(WHISPER_DIR, "main");
+      // In a Docker environment like Render, check for compiled binary
       if (process.env.NODE_ENV === 'production') {
-        if (fs.existsSync(mainPath)) {
-          console.log("✅ Found Whisper main binary at", mainPath);
+        if (fs.existsSync(binPath)) {
+          console.log("✅ Found Whisper binary at", binPath);
         } else {
-          throw new Error(`Whisper binary not found at ${binPath} or ${mainPath}. Ensure it's included in your Docker image.`);
+          throw new Error(`Whisper binary not found at ${binPath}. Ensure it's included in your Docker image.`);
         }
       }
       
