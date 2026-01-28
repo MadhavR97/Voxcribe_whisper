@@ -4,6 +4,7 @@ import https from "https"
 import { execSync } from "child_process"
 
 const WHISPER_DIR = path.join(process.cwd(), "whisper")
+const SRC_DIR = path.join(WHISPER_DIR, "src")
 
 const MODEL_NAME = "ggml-small.bin"
 const MODEL_PATH = path.join(WHISPER_DIR, MODEL_NAME)
@@ -61,27 +62,29 @@ export async function ensureWhisperInstalled() {
     }
   }
 
-  // ---------- Linux (build from source, v1.5.4 compatible) ----------
+  // ---------- Linux (Render-safe, build once) ----------
   if (platform === "linux") {
     if (fs.existsSync(binPath)) return
 
     console.log("🔨 Building Whisper from source (linux)")
 
-    execSync(`
-      cd ${WHISPER_DIR} &&
-      git clone --depth 1 --branch v1.5.4 https://github.com/ggml-org/whisper.cpp.git src &&
-      cd src &&
-      make -j
-    `, { stdio: "inherit" })
+    // Clone only once
+    if (!fs.existsSync(SRC_DIR)) {
+      execSync(
+        `cd ${WHISPER_DIR} && git clone --depth 1 --branch v1.5.4 https://github.com/ggml-org/whisper.cpp.git src`,
+        { stdio: "inherit" }
+      )
+    }
 
+    // Build safely (Render CPU throttling friendly)
+    execSync(`cd ${SRC_DIR} && make -j2`, { stdio: "inherit" })
+
+    // Find CLI binary dynamically
     const candidates = ["whisper", "whisper-cli", "main"]
     let builtBinary: string | null = null
 
     for (const name of candidates) {
-      const found = findFileRecursive(
-        path.join(WHISPER_DIR, "src"),
-        name
-      )
+      const found = findFileRecursive(SRC_DIR, name)
       if (found) {
         builtBinary = found
         break
