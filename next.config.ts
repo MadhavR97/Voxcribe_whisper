@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
   // Enable compression for production
   compress: true,
   // Configure output for deployment
-  output: undefined,
+  output: 'standalone',
   // Timeout for API routes
 };
 
