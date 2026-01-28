@@ -83,34 +83,6 @@ export default function DashboardPage() {
             {/* Main layout */}
             <div className="relative z-10 max-w-6xl mx-auto px-6 py-10 flex gap-8">
 
-                {/* Sidebar */}
-                <div className="w-64 shrink-0 hidden md:block">
-                    <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl shadow p-4 mb-4">
-                        <p className="text-sm text-zinc-400 mb-2">
-                            {files.length} daily transcriptions used
-                        </p>
-
-                        <button className="w-full py-2 rounded-lg bg-gradient-to-r from-red-600 to-pink-600 text-white text-sm font-medium shadow-lg shadow-red-600/20 hover:shadow-red-600/40 transition">
-                            Go Unlimited
-                        </button>
-                    </div>
-
-                    <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl shadow p-4">
-                        <p className="text-xs text-zinc-400 mb-2">Shortcuts</p>
-
-                        <button className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-white/10 text-sm font-medium text-white">
-                            📁 Recent Files
-                        </button>
-
-                        <div className="mt-4">
-                            <p className="text-xs text-zinc-400 mb-2">Folders</p>
-                            <button className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-white/10 text-sm text-zinc-300">
-                                ➕ New Folder
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
                 {/* Main card */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -120,7 +92,7 @@ export default function DashboardPage() {
                 >
                     <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-2 text-xl font-semibold text-white">
-                            ⬛⬛⬛ Recent Files
+                            All Recent Files
                         </div>
 
                         <div className="flex items-center gap-3">
@@ -132,12 +104,12 @@ export default function DashboardPage() {
                                     🗑️ Clear All
                                 </button>
                             )}
-                            <button
+                            {/* <button
                                 onClick={() => router.push("/transcription")}
                                 className="flex items-center gap-2 text-sm font-medium text-red-400 hover:text-red-300 transition"
                             >
                                 🎙 Record
-                            </button>
+                            </button> */}
                         </div>
                     </div>
 
