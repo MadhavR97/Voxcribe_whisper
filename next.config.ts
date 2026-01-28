@@ -5,8 +5,8 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: '10mb',
     },
-    serverComponentsExternalPackages: ['sharp', 'canvas'],
   },
+  serverExternalPackages: ['sharp', 'canvas'],
   // Enable compression for production
   compress: true,
   // Configure output for deployment

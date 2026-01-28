@@ -4,12 +4,27 @@ import https from "https"
 import { execSync } from "child_process"
 
 const BIN_DIR = path.join(process.cwd(), "bin")
-const FFMPEG_PATH =
+let FFMPEG_PATH =
     process.platform === "win32"
         ? path.join(BIN_DIR, "ffmpeg.exe")
         : path.join(BIN_DIR, "ffmpeg")
 
+// Check if we're in Render environment
+if (process.platform === "linux" && process.env.RENDER === 'true') {
+    const renderFfmpegPath = path.join(process.cwd(), "bin", "ffmpeg");
+    if (fs.existsSync(renderFfmpegPath)) {
+        FFMPEG_PATH = renderFfmpegPath;
+    }
+}
+
 export function getFFmpegPath() {
+    // Check if we're in Render environment
+    if (process.platform === "linux" && process.env.RENDER === 'true') {
+        const renderFfmpegPath = path.join(process.cwd(), "bin", "ffmpeg");
+        if (fs.existsSync(renderFfmpegPath)) {
+            return renderFfmpegPath;
+        }
+    }
     return FFMPEG_PATH
 }
 

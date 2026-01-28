@@ -19,6 +19,11 @@ export function getWhisperBinaryPath() {
   }
 
   if (platform === "linux") {
+    // Check if we're in Render environment
+    const renderBinPath = path.join(process.cwd(), "whisper", "whisper");
+    if (process.env.RENDER === 'true' && fs.existsSync(renderBinPath)) {
+      return renderBinPath;
+    }
     return path.join(WHISPER_DIR, "whisper")
   }
 
