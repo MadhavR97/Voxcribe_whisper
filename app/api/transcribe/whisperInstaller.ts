@@ -5,11 +5,11 @@ import { execSync } from "child_process"
 
 const WHISPER_DIR = path.join(process.cwd(), "whisper")
 
-const MODEL_NAME = "ggml-large-v3.bin"
+const MODEL_NAME = "ggml-small.bin"
 const MODEL_PATH = path.join(WHISPER_DIR, MODEL_NAME)
 
 const MODEL_URL =
-  "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3.bin"
+  "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin"
 
 export function getWhisperBinaryPath() {
   const platform = process.platform
