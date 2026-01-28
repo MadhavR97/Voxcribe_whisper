@@ -11,6 +11,10 @@ const MODEL_PATH = path.join(WHISPER_DIR, MODEL_NAME)
 const MODEL_URL =
   "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin"
 
+// =========================
+// Paths
+// =========================
+
 export function getWhisperBinaryPath() {
   const platform = process.platform
 
@@ -33,125 +37,115 @@ export function getWhisperModelPath() {
   return MODEL_PATH
 }
 
+// =========================
+// Installer
+// =========================
+
 export async function ensureWhisperInstalled() {
   const platform = process.platform
+  const binPath = getWhisperBinaryPath()
 
   if (!fs.existsSync(WHISPER_DIR)) {
     fs.mkdirSync(WHISPER_DIR, { recursive: true })
   }
 
-  // =========================
-  // 1️⃣ Ensure Whisper binary
-  // =========================
-
+  // ---------- macOS ----------
   if (platform === "darwin") {
     try {
       execSync("which whisper-cli", { stdio: "ignore" })
+      return
     } catch {
       throw new Error(
         "Whisper not found on macOS. Please run: brew install whisper-cpp"
       )
     }
-  } else {
-    const binPath = getWhisperBinaryPath()
-
-    if (!fs.existsSync(binPath)) {
-      console.log("⬇️ Downloading Whisper binary for", platform)
-
-      let url: string
-      let extractZip = false
-
-      if (platform === "win32") {
-        url =
-          "https://github.com/ggerganov/whisper.cpp/releases/download/v1.5.4/whisper-bin-x64.zip"
-        extractZip = true
-      } else if (platform === "linux") {
-        console.log("🔨 Building Whisper from source (linux)")
-
-        execSync(`
-    cd ${WHISPER_DIR} &&
-    git clone --depth 1 --branch v1.5.4 https://github.com/ggml-org/whisper.cpp.git src &&
-    cd src &&
-    make -j examples/main
-  `, { stdio: "inherit" })
-
-        const builtBinary = path.join(WHISPER_DIR, "src", "examples", "main")
-
-        if (!fs.existsSync(builtBinary)) {
-          throw new Error("Whisper CLI binary was not built")
-        }
-
-        fs.copyFileSync(builtBinary, binPath)
-        fs.chmodSync(binPath, 0o755)
-
-        console.log("✅ Whisper binary built at", binPath)
-        return
-      }
-      else {
-        throw new Error(`Auto-install not supported on ${platform}`)
-      }
-
-      const tmpPath = path.join(WHISPER_DIR, path.basename(url))
-
-      await downloadFileWithProgress(url, tmpPath, "Whisper binary")
-
-      if (extractZip) {
-        execSync(
-          `powershell -Command "Expand-Archive -Force '${tmpPath}' '${WHISPER_DIR}'"`,
-          { stdio: "inherit" }
-        )
-
-        // Windows ZIP now ships main.exe instead of whisper.exe
-        const exePath =
-          findFileRecursive(WHISPER_DIR, "whisper.exe") ||
-          findFileRecursive(WHISPER_DIR, "main.exe")
-
-        if (!exePath) {
-          throw new Error(
-            "Whisper ZIP extracted but neither whisper.exe nor main.exe was found"
-          )
-        }
-
-        fs.renameSync(exePath, binPath)
-
-        // 🧹 Clean up ZIP after extraction
-        if (fs.existsSync(tmpPath)) {
-          fs.unlinkSync(tmpPath)
-        }
-
-        // 🛡 Ensure executable (safe no-op on Windows)
-        try {
-          fs.chmodSync(binPath, 0o755)
-        } catch { }
-
-      } else {
-        fs.renameSync(tmpPath, binPath)
-        fs.chmodSync(binPath, 0o755)
-      }
-
-      if (!fs.existsSync(binPath)) {
-        throw new Error("Whisper binary install failed")
-      }
-
-      console.log("✅ Whisper binary installed at", binPath)
-    }
   }
 
-  // =========================
-  // 2️⃣ Ensure Whisper model
-  // =========================
+  // ---------- Linux (build from source) ----------
+  if (platform === "linux") {
+    if (fs.existsSync(binPath)) return
+
+    console.log("🔨 Building Whisper from source (linux)")
+
+    execSync(`
+      cd ${WHISPER_DIR} &&
+      git clone --depth 1 --branch v1.5.4 https://github.com/ggml-org/whisper.cpp.git src &&
+      cd src &&
+      make -j examples/main
+    `, { stdio: "inherit" })
+
+    const builtBinary = path.join(
+      WHISPER_DIR,
+      "src",
+      "examples",
+      "main",
+      "main"
+    )
+
+    if (!fs.existsSync(builtBinary)) {
+      throw new Error("Whisper CLI binary was not built")
+    }
+
+    fs.copyFileSync(builtBinary, binPath)
+    fs.chmodSync(binPath, 0o755)
+
+    console.log("✅ Whisper binary built at", binPath)
+    return
+  }
+
+  // ---------- Windows ----------
+  if (platform === "win32") {
+    if (fs.existsSync(binPath)) return
+
+    const url =
+      "https://github.com/ggerganov/whisper.cpp/releases/download/v1.5.4/whisper-bin-x64.zip"
+
+    const tmpPath = path.join(WHISPER_DIR, "whisper.zip")
+
+    await downloadFileWithProgress(url, tmpPath, "Whisper binary")
+
+    execSync(
+      `powershell -Command "Expand-Archive -Force '${tmpPath}' '${WHISPER_DIR}'"`,
+      { stdio: "inherit" }
+    )
+
+    const exePath =
+      findFileRecursive(WHISPER_DIR, "whisper.exe") ||
+      findFileRecursive(WHISPER_DIR, "main.exe")
+
+    if (!exePath) {
+      throw new Error(
+        "Whisper ZIP extracted but neither whisper.exe nor main.exe was found"
+      )
+    }
+
+    fs.renameSync(exePath, binPath)
+    fs.chmodSync(binPath, 0o755)
+    fs.unlinkSync(tmpPath)
+
+    console.log("✅ Whisper binary installed at", binPath)
+    return
+  }
+
+  throw new Error(`Unsupported platform: ${platform}`)
+}
+
+// =========================
+// Model
+// =========================
+
+export async function ensureWhisperModel() {
+  if (fs.existsSync(MODEL_PATH)) return
+
+  console.log("⬇️ Downloading Whisper model:", MODEL_NAME)
+
+  await downloadFileWithProgress(MODEL_URL, MODEL_PATH, "Whisper model")
 
   if (!fs.existsSync(MODEL_PATH)) {
-    console.log("⬇️ Downloading Whisper model:", MODEL_NAME)
-
-    await downloadFileWithProgress(MODEL_URL, MODEL_PATH, "Whisper model")
-
-    if (!fs.existsSync(MODEL_PATH)) {
-      throw new Error("Whisper model download failed")
-    }
-
-    console.log("✅ Whisper model downloaded at", MODEL_PATH)
+    throw new Error("Whisper model download failed")
   }
+
+  console.log("✅ Whisper model downloaded at", MODEL_PATH)
 }
 
 // =========================
@@ -169,7 +163,6 @@ function downloadFileWithProgress(
 
     https
       .get(url, (res) => {
-        // 🔁 Handle redirects (GitHub, HuggingFace)
         if (
           res.statusCode &&
           [301, 302, 303, 307, 308].includes(res.statusCode)
@@ -196,7 +189,6 @@ function downloadFileWithProgress(
           )
             .then(resolve)
             .catch(reject)
-
           return
         }
 
@@ -204,29 +196,6 @@ function downloadFileWithProgress(
           reject(new Error(`Download failed: ${res.statusCode}`))
           return
         }
-
-        const total = parseInt(res.headers["content-length"] || "0", 10)
-        let downloaded = 0
-        let lastPercent = 0
-
-        res.on("data", (chunk) => {
-          downloaded += chunk.length
-
-          if (total) {
-            const percent = Math.floor((downloaded / total) * 100)
-
-            if (percent !== lastPercent && percent % 5 === 0) {
-              lastPercent = percent
-              process.stdout.write(
-                `\r⬇️ ${label}: ${percent}% (${(
-                  downloaded /
-                  1024 /
-                  1024
-                ).toFixed(1)} MB)`
-              )
-            }
-          }
-        })
 
         res.pipe(file)
 
@@ -243,23 +212,17 @@ function downloadFileWithProgress(
 }
 
 function findFileRecursive(dir: string, filename: string): string | null {
-  const entries = fs.readdirSync(dir, { withFileTypes: true })
-
-  for (const entry of entries) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const fullPath = path.join(dir, entry.name)
 
-    if (
-      entry.isFile() &&
-      entry.name.toLowerCase() === filename.toLowerCase()
-    ) {
+    if (entry.isFile() && entry.name.toLowerCase() === filename.toLowerCase()) {
       return fullPath
     }
 
     if (entry.isDirectory()) {
-      const result = findFileRecursive(fullPath, filename)
-      if (result) return result
+      const found = findFileRecursive(fullPath, filename)
+      if (found) return found
     }
   }
-
   return null
 }
