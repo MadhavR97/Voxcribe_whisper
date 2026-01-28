@@ -26,8 +26,9 @@ RUN apk add --no-cache git cmake make g++ && \
     git clone https://github.com/ggml-org/whisper.cpp.git /tmp/whisper-src && \
     cd /tmp/whisper-src && \
     make -j$(nproc) && \
-    cp build/bin/main ./whisper/whisper && \
-    chmod +x ./whisper/whisper && \
+    mkdir -p /app/whisper && \
+    cp build/bin/main /app/whisper/whisper && \
+    chmod +x /app/whisper/whisper && \
     cd /app && \
     rm -rf /tmp/whisper-src
 
