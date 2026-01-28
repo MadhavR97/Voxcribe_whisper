@@ -214,10 +214,10 @@ export default function TranscriptionPage() {
         transition={{ duration: 0.8, ease: "easeOut" }}
         className="relative z-10 text-center mb-10"
       >
-        <p className="inline-flex items-center gap-2 text-sm sm:text-base text-zinc-300 mb-3">
+        {/* <p className="inline-flex items-center gap-2 text-sm sm:text-base text-zinc-300 mb-3">
           <span className="text-red-400">📈</span>
           <span>30+ hours transcribed</span>
-        </p>
+        </p> */}
 
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-tight">
           Unlimited{" "}
@@ -228,7 +228,7 @@ export default function TranscriptionPage() {
         </h1>
 
         <p className="mt-4 text-base sm:text-lg text-zinc-400 max-w-2xl mx-auto">
-          Convert audio and video into accurate text in seconds with VoxScribe.
+          Convert audio into accurate text in seconds with VoxScribe.
         </p>
       </motion.div>
 
