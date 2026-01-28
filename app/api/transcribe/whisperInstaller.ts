@@ -66,8 +66,29 @@ export async function ensureWhisperInstalled() {
           "https://github.com/ggerganov/whisper.cpp/releases/download/v1.5.4/whisper-bin-x64.zip"
         extractZip = true
       } else if (platform === "linux") {
-        url =
-          "https://github.com/ggerganov/whisper.cpp/releases/download/v1.5.4/whisper-cpp-linux-x64"
+        console.log("🔨 Building Whisper from source (linux)")
+
+        execSync(`
+    cd ${WHISPER_DIR} &&
+    git clone --depth 1 --branch v1.5.4 https://github.com/ggml-org/whisper.cpp.git src &&
+    cd src &&
+    make -j
+  `, { stdio: "inherit" })
+
+        fs.copyFileSync(
+          path.join(WHISPER_DIR, "src", "main"),
+          binPath
+        )
+
+        fs.chmodSync(binPath, 0o755)
+
+        // ✅ IMPORTANT: stop here — no download logic for Linux
+        if (!fs.existsSync(binPath)) {
+          throw new Error("Whisper build failed on Linux")
+        }
+
+        console.log("✅ Whisper binary built at", binPath)
+        return
       } else {
         throw new Error(`Auto-install not supported on ${platform}`)
       }
