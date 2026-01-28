@@ -56,6 +56,12 @@ export default function FilePage() {
 
     useEffect(() => {
         const loadUser = async () => {
+            if (!supabase) {
+                console.error('Supabase client not available')
+                router.push("/auth/login")
+                return
+            }
+            
             const {
                 data: { user },
             } = await supabase.auth.getUser()
@@ -72,6 +78,12 @@ export default function FilePage() {
     }, [router])
 
     const handleLogout = async () => {
+        if (!supabase) {
+            console.error('Supabase client not available')
+            router.push('/auth/login')
+            return
+        }
+        
         await supabase.auth.signOut()
         router.push("/auth/login")
     }
