@@ -109,12 +109,19 @@ export async function ensureWhisperInstalled() {
           const sourceDir = path.dirname(makefilePath)
 
           try {
-            // Run 'make main' to only build the main binary, saving time.
-            // Using spawn (via runCommand) ensures we don't block the event loop.
-            await runCommand("make", ["main"], sourceDir)
+            // 🔧 Patch Makefile to reduce optimization level from -O3 to -O1
+            // This prevents Out-Of-Memory (OOM) errors on small cloud instances (like Render free tier)
+            // during the compilation of the large whisper.cpp file.
+            // We use 'sed' to replace the flag in the Makefile.
+            console.log("🔧 Lowering optimization level to -O1 to save memory...");
+            await runCommand("sed", ["-i", "'s/-O3/-O1/g'", "Makefile"], sourceDir);
+
+            // Run 'make main' to only build the main binary.
+            // -j1 ensures single-threaded build to further save memory.
+            await runCommand("make", ["main", "-j1"], sourceDir)
           } catch (error) {
             throw new Error(
-              "Failed to compile Whisper. Ensure 'make' and 'g++' are installed. Error: " + (error as any).message
+              "Failed to compile Whisper. Ensure 'make', 'g++', and 'sed' are installed. Error: " + (error as any).message
             )
           }
         }
