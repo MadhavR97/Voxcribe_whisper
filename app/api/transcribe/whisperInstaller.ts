@@ -3,7 +3,7 @@ import path from "path"
 import https from "https"
 import { execSync } from "child_process"
 
-const WHISPER_DIR = path.join(process.cwd(), "whisper")
+const WHISPER_DIR = path.join((process as any).cwd(), "whisper")
 
 const MODEL_NAME = "ggml-small.bin"
 const MODEL_PATH = path.join(WHISPER_DIR, MODEL_NAME)
@@ -12,7 +12,7 @@ const MODEL_URL =
   "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin"
 
 export function getWhisperBinaryPath() {
-  const platform = process.platform
+  const platform = (process as any).platform
 
   if (platform === "win32") {
     return path.join(WHISPER_DIR, "whisper-cli.exe")
@@ -34,7 +34,7 @@ export function getWhisperModelPath() {
 }
 
 export async function ensureWhisperInstalled() {
-  const platform = process.platform
+  const platform = (process as any).platform
 
   if (!fs.existsSync(WHISPER_DIR)) {
     fs.mkdirSync(WHISPER_DIR, { recursive: true })
@@ -66,30 +66,76 @@ export async function ensureWhisperInstalled() {
           "https://github.com/ggerganov/whisper.cpp/releases/download/v1.5.4/whisper-bin-x64.zip"
         extractZip = true
       } else if (platform === "linux") {
+        // Official releases do not provide pre-built Linux binaries.
+        // We download the source code and compile it locally.
+        // Note: The repo moved from ggerganov to ggml-org
         url =
-          "https://github.com/ggerganov/whisper.cpp/releases/download/v1.5.4/whisper-cli-linux-x64"
+          "https://github.com/ggml-org/whisper.cpp/archive/refs/tags/v1.5.4.zip"
+        extractZip = true
       } else {
         throw new Error(`Auto-install not supported on ${platform}`)
       }
 
       const tmpPath = path.join(WHISPER_DIR, path.basename(url))
 
+      // GitHub requires User-Agent
       await downloadFileWithProgress(url, tmpPath, "Whisper binary")
 
       if (extractZip) {
-        execSync(
-          `powershell -Command "Expand-Archive -Force '${tmpPath}' '${WHISPER_DIR}'"`,
-          { stdio: "inherit" }
-        )
+        if (platform === "win32") {
+          execSync(
+            `powershell -Command "Expand-Archive -Force '${tmpPath}' '${WHISPER_DIR}'"`,
+            { stdio: "inherit" }
+          )
+        } else {
+          // Linux/Unix: Use unzip
+          // Ensure unzip is available
+          try {
+             execSync("which unzip", { stdio: "ignore" })
+          } catch {
+             throw new Error("unzip is required but not found.")
+          }
+          execSync(`unzip -o "${tmpPath}" -d "${WHISPER_DIR}"`, {
+            stdio: "inherit",
+          })
+        }
 
-        // Windows ZIP now ships main.exe instead of whisper.exe
-        const exePath =
-          findFileRecursive(WHISPER_DIR, "whisper.exe") ||
-          findFileRecursive(WHISPER_DIR, "main.exe")
+        if (platform === "linux") {
+          console.log("🔨 Compiling Whisper from source...")
+          
+          // Find the extracted source directory by looking for the Makefile
+          const makefilePath = findFileRecursive(WHISPER_DIR, "Makefile")
+          if (!makefilePath) {
+             throw new Error("Could not find Makefile in extracted source.")
+          }
+          const sourceDir = path.dirname(makefilePath)
+
+          try {
+            execSync("make", { cwd: sourceDir, stdio: "inherit" })
+          } catch (error) {
+            throw new Error(
+              "Failed to compile Whisper. Ensure 'make' and 'g++' are installed. Error: " + (error as any).message
+            )
+          }
+        }
+
+        // Locate the binary
+        // Windows: whisper.exe or main.exe
+        // Linux: main (produced by make)
+        let exePath: string | null = null
+        
+        if (platform === "win32") {
+            exePath =
+            findFileRecursive(WHISPER_DIR, "whisper.exe") ||
+            findFileRecursive(WHISPER_DIR, "main.exe")
+        } else {
+            // On Linux the compiled binary is usually named 'main'
+            exePath = findFileRecursive(WHISPER_DIR, "main")
+        }
 
         if (!exePath) {
           throw new Error(
-            "Whisper ZIP extracted but neither whisper.exe nor main.exe was found"
+            "Whisper binary not found after extraction/compilation"
           )
         }
 
@@ -103,8 +149,7 @@ export async function ensureWhisperInstalled() {
         // 🛡 Ensure executable (safe no-op on Windows)
         try {
           fs.chmodSync(binPath, 0o755)
-        } catch { }
-
+        } catch {}
       } else {
         fs.renameSync(tmpPath, binPath)
         fs.chmodSync(binPath, 0o755)
@@ -147,9 +192,15 @@ function downloadFileWithProgress(
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     const file = fs.createWriteStream(dest)
+    
+    const options = {
+        headers: {
+            'User-Agent': 'Node.js/HTTPS', // GitHub requires a User-Agent
+        }
+    };
 
     https
-      .get(url, (res) => {
+      .get(url, options, (res) => {
         // 🔁 Handle redirects (GitHub, HuggingFace)
         if (
           res.statusCode &&
@@ -198,7 +249,7 @@ function downloadFileWithProgress(
 
             if (percent !== lastPercent && percent % 5 === 0) {
               lastPercent = percent
-              process.stdout.write(
+              ;(process as any).stdout.write(
                 `\r⬇️ ${label}: ${percent}% (${(
                   downloaded /
                   1024 /
@@ -213,7 +264,7 @@ function downloadFileWithProgress(
 
         file.on("finish", () => {
           file.close()
-          process.stdout.write("\n")
+          ;(process as any).stdout.write("\n")
           resolve()
         })
       })
