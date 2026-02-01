@@ -1,7 +1,7 @@
 import fs from "fs"
 import path from "path"
 import https from "https"
-import { execSync } from "child_process"
+import { spawn } from "child_process"
 
 const WHISPER_DIR = path.join((process as any).cwd(), "whisper")
 
@@ -46,7 +46,7 @@ export async function ensureWhisperInstalled() {
 
   if (platform === "darwin") {
     try {
-      execSync("which whisper-cli", { stdio: "ignore" })
+      await runCommand("which", ["whisper-cli"], undefined, true)
     } catch {
       throw new Error(
         "Whisper not found on macOS. Please run: brew install whisper-cpp"
@@ -83,25 +83,23 @@ export async function ensureWhisperInstalled() {
 
       if (extractZip) {
         if (platform === "win32") {
-          execSync(
-            `powershell -Command "Expand-Archive -Force '${tmpPath}' '${WHISPER_DIR}'"`,
-            { stdio: "inherit" }
-          )
+          await runCommand("powershell", [
+            "-Command",
+            `"Expand-Archive -Force '${tmpPath}' '${WHISPER_DIR}'"`
+          ])
         } else {
           // Linux/Unix: Use unzip
           // Ensure unzip is available
           try {
-             execSync("which unzip", { stdio: "ignore" })
+             await runCommand("which", ["unzip"], undefined, true)
           } catch {
              throw new Error("unzip is required but not found.")
           }
-          execSync(`unzip -o "${tmpPath}" -d "${WHISPER_DIR}"`, {
-            stdio: "inherit",
-          })
+          await runCommand("unzip", ["-o", tmpPath, "-d", WHISPER_DIR])
         }
 
         if (platform === "linux") {
-          console.log("🔨 Compiling Whisper from source...")
+          console.log("🔨 Compiling Whisper from source (this may take a while)...")
           
           // Find the extracted source directory by looking for the Makefile
           const makefilePath = findFileRecursive(WHISPER_DIR, "Makefile")
@@ -111,7 +109,9 @@ export async function ensureWhisperInstalled() {
           const sourceDir = path.dirname(makefilePath)
 
           try {
-            execSync("make", { cwd: sourceDir, stdio: "inherit" })
+            // Run 'make main' to only build the main binary, saving time.
+            // Using spawn (via runCommand) ensures we don't block the event loop.
+            await runCommand("make", ["main"], sourceDir)
           } catch (error) {
             throw new Error(
               "Failed to compile Whisper. Ensure 'make' and 'g++' are installed. Error: " + (error as any).message
@@ -183,6 +183,21 @@ export async function ensureWhisperInstalled() {
 // =========================
 // Helpers
 // =========================
+
+function runCommand(command: string, args: string[], cwd?: string, silent: boolean = false): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const proc = spawn(command, args, { 
+          cwd, 
+          stdio: silent ? 'ignore' : 'inherit', 
+          shell: true 
+      })
+      proc.on("close", (code) => {
+        if (code === 0) resolve()
+        else reject(new Error(`Command ${command} failed with code ${code}`))
+      })
+      proc.on("error", (err) => reject(err))
+    })
+  }
 
 function downloadFileWithProgress(
   url: string,
